@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MotorCity — Patikimas autoservisas Vilniuje</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Space Grotesk', 'sans-serif'],
+        display: ['Bebas Neue', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      },
+      colors: {
+        ink: '#0A0A0B',
+        ash: '#28362f',
+        smoke: '#26262A',
+        steel: '#3A3A40',
+        chrome: '#8A8A92',
+        bone: '#E8E6E1',
+        flame: '#FF5B1F',
+        flameDark: '#D94817',
+        amber: '#FFB627',
+      }
+    }
+  }
+}
+</script>
+<style>
+  body { font-family: 'Space Grotesk', sans-serif; background: #436151; color: #E8E6E1; -webkit-font-smoothing: antialiased; }
+  .display { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.02em; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .grain { background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(255,91,31,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,91,31,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  /* .diagonal-stripes {
+    background-image: repeating-linear-gradient(135deg, #FF5B1F 0 14px, transparent 70px 28px);
+  } */
+  .marquee {
+    animation: marquee 30s linear infinite;
+  }
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: reveal 0.8s forwards;
+  }
+  @keyframes reveal {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  /* .glow-text {
+    text-shadow: 0 0 40px rgba(255,91,31,0.3);
+  } */
+  .btn-flame {
+    background: #FF5B1F;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-flame:hover {
+    background: #D94817;
+    transform: translateY(-1px);
+  }
+  .btn-flame:active {
+    transform: translateY(0);
+  }
+  .service-card {
+    transition: all 0.3s;
+    background: linear-gradient(135deg, #161618 0%, #1c1c20 100%);
+  }
+  .service-card:hover {
+    transform: translateY(-4px);
+    border-color: #FF5B1F;
+  }
+  .service-card:hover .service-arrow {
+    transform: translateX(4px);
+    color: #FF5B1F;
+  }
+  .calendar-day {
+    transition: all 0.15s;
+  }
+  .calendar-day.available:hover {
+    background: #FF5B1F;
+    color: #fff;
+  }
+  .calendar-day.selected {
+    background: #FF5B1F !important;
+    color: #fff !important;
+  }
+  .calendar-day.unavailable {
+    color: #3A3A40;
+    cursor: not-allowed;
+  }
+  .calendar-day.full {
+    background: #26262A;
+    color: #5A5A60;
+    cursor: not-allowed;
+    position: relative;
+  }
+  .calendar-day.full::after {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    background: repeating-linear-gradient(135deg, transparent 0 3px, rgba(255,91,31,0.15) 3px 5px);
+    pointer-events: none;
+  }
+  .time-slot {
+    transition: all 0.15s;
+  }
+  .time-slot:hover:not(.disabled) {
+    background: #FF5B1F;
+    color: #fff;
+    border-color: #FF5B1F;
+  }
+  .time-slot.selected {
+    background: #FF5B1F !important;
+    color: #fff !important;
+    border-color: #FF5B1F !important;
+  }
+  .time-slot.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    text-decoration: line-through;
+  }
+  input, select, textarea {
+    background: #161618;
+    border: 1px solid #26262A;
+    color: #E8E6E1;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #FF5B1F;
+  }
+  .step-indicator {
+    transition: all 0.3s;
+  }
+  .step-indicator.active {
+    background: #FF5B1F;
+    color: #fff;
+  }
+  .step-indicator.done {
+    background: #26262A;
+    color: #FF5B1F;
+  }
+  .capacity-bar {
+    transition: all 0.3s ease;
+  }
+  /* ── Floating pill nav (mynd-style) ── */
+  .nav-pill {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    padding: 14px 24px 0;
+  }
+
+  /* Utility bar kompensacija nav pozicijai */
+  .nav-pill {
+    top: calc(28px + 0.75rem) !important;
+    transition: top 0.25s ease;
+  }
+  .nav-pill.utility-hidden {
+    top: 0.75rem !important;
+  }
+  @media (max-width: 768px) {
+    .nav-pill { top: 0.75rem !important; }
+  }
+
+  .nav-glass {
+    max-width: 1280px;
+    margin: 0 auto;
+    background: rgba(28, 40, 34, 0.55);
+    backdrop-filter: blur(48px) saturate(160%);
+    -webkit-backdrop-filter: blur(48px) saturate(160%);
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    padding: 0 8px;
+    box-shadow:
+      inset 0 1.5px 0 rgba(255, 255, 255, 0.45),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+      inset 1px 0 0 rgba(255, 255, 255, 0.1),
+      inset -1px 0 0 rgba(255, 255, 255, 0.1),
+      0 8px 32px rgba(0, 0, 0, 0.18),
+      0 2px 8px rgba(0, 0, 0, 0.12);
+    transition: background 0.4s, border-color 0.4s, box-shadow 0.4s;
+    position: relative;
+    overflow: visible;
+  }
+  .nav-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 22px;
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.18) 0%,
+      rgba(255, 255, 255, 0.04) 40%,
+      rgba(0, 0, 0, 0.04) 100%
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+  .nav-pill.scrolled .nav-glass {
+    background: rgba(10, 10, 11, 0.55);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow:
+      inset 0 1.5px 0 rgba(255, 255, 255, 0.2),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+      0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Nav links */
+  .nav-link {
+    position: relative;
+    padding: 4px 0;
+  }
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 2px;
+    /* background: #FF5B1F; */
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .nav-link:hover::after {
+    transform: scaleX(1);
+  }
+
+  /* Dropdown trigger with invisible bridge */
+  .nav-dropdown-wrap {
+    position: relative;
+  }
+  .nav-dropdown-wrap::after {
+    content: '';
+    position: absolute;
+    left: -40px;
+    right: -40px;
+    top: 100%;
+    height: 20px;
+  }
+
+  /* ── Mega dropdown ── */
+  .mega-dropdown {
+    position: absolute;
+    top: calc(100% + 14px);
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    min-width: 720px;
+    background: rgba(28, 40, 34, 0.72);
+    backdrop-filter: blur(60px) saturate(160%);
+    -webkit-backdrop-filter: blur(60px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 20px;
+    padding: 28px 32px;
+    opacity: 0;
+    visibility: hidden;
+    box-shadow:
+      inset 0 1.5px 0 rgba(255, 255, 255, 0.35),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+      inset 1px 0 0 rgba(255, 255, 255, 0.07),
+      inset -1px 0 0 rgba(255, 255, 255, 0.07),
+      0 20px 60px rgba(0, 0, 0, 0.35),
+      0 4px 16px rgba(0, 0, 0, 0.2);
+    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                visibility 0.35s;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .mega-dropdown::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    background: linear-gradient(
+      160deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.02) 40%,
+      transparent 100%
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+  .mega-dropdown > * {
+    position: relative;
+    z-index: 1;
+  }
+  .nav-dropdown-wrap:hover .mega-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+  }
+  .mega-item {
+    padding: 12px 14px;
+    border-radius: 12px;
+    transition: background 0.2s, border-color 0.2s;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .mega-item:hover {
+    background: rgba(36, 36, 36, 0.592);
+    border-color: rgba(255, 255, 255, 0.47);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+  .mega-item:hover .mega-title {
+    color: #FF5B1F;
+  }
+  .mega-review-card {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+  .mega-reviews {
+    min-width: 780px;
+    right: 0;
+    left: auto;
+    transform: translateY(8px);
+  }
+  .nav-dropdown-wrap:hover .mega-reviews {
+    transform: translateY(0);
+  }
+  .mega-contact {
+    min-width: 580px;
+    right: 0;
+    left: auto;
+    transform: translateY(8px);
+  }
+  .nav-dropdown-wrap:hover .mega-contact {
+    transform: translateY(0);
+  }
+
+  /* ── Hamburger ── */
+  .hamburger {
+    width: 28px;
+    height: 20px;
+    position: relative;
+    cursor: pointer;
+    z-index: 60;
+  }
+  .hamburger span {
+    display: block;
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: #E8E6E1;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 1px;
+  }
+  .hamburger span:nth-child(1) { top: 0; }
+  .hamburger span:nth-child(2) { top: 9px; width: 60%; }
+  .hamburger span:nth-child(3) { top: 18px; }
+  .hamburger.active span:nth-child(1) {
+    top: 9px;
+    transform: rotate(45deg);
+  }
+  .hamburger.active span:nth-child(2) {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  .hamburger.active span:nth-child(3) {
+    top: 9px;
+    transform: rotate(-45deg);
+  }
+
+  /* ── Mobile menu overlay ── */
+  .mobile-menu {
+    position: fixed;
+    inset: 0;
+    z-index: 49;
+    background: rgba(10, 10, 11, 0.97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.5s;
+  }
+  .mobile-menu.open {
+    opacity: 1;
+    visibility: visible;
+  }
+  .mobile-menu .menu-link {
+    display: block;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.4s ease, transform 0.4s ease, color 0.2s;
+  }
+  .mobile-menu.open .menu-link {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .mobile-menu.open .menu-link:nth-child(1) { transition-delay: 0.1s; }
+  .mobile-menu.open .menu-link:nth-child(2) { transition-delay: 0.18s; }
+  .mobile-menu.open .menu-link:nth-child(3) { transition-delay: 0.26s; }
+  .mobile-menu.open .menu-link:nth-child(4) { transition-delay: 0.34s; }
+  .mobile-menu.open .menu-link:nth-child(5) { transition-delay: 0.42s; }
+  .mobile-menu.open .menu-link:nth-child(6) { transition-delay: 0.50s; }
+  .mobile-menu .menu-divider {
+    width: 40px;
+    height: 1px;
+    background: #3A3A40;
+    margin: 2rem auto;
+    opacity: 0;
+    transition: opacity 0.4s ease 0.5s;
+  }
+  .mobile-menu.open .menu-divider {
+    opacity: 1;
+  }
+
+  /* ── Horizontal scroll services ── */
+  .cards-section {
+    position: relative;
+    overflow: hidden;
+    height: 100vh;
+    clip-path: inset(0 0 85% 0);
+    background: url('motor-about.webp') center center / cover no-repeat;
+  }
+  .cards-viewport {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+  .cards-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 2;
+    padding: 90px 40px 0;
+    pointer-events: none;
+  }
+  .cards-header > * { pointer-events: auto; }
+  .cards-track {
+    display: flex;
+    flex-wrap: nowrap;
+    height: 100%;
+    align-items: flex-start;
+    padding: 260px 40px 0;
+    gap: 24px;
+  }
+  .cards-track .hcard {
+    flex-shrink: 0;
+    width: 420px;
+    height: 480px;
+    border-radius: 10px;
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: linear-gradient(135deg, #161817 0%, #1c1c20 100%);
+    border: 1px solid #262a26;
+    transition: border-color 0.3s, transform 0.3s;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .cards-track .hcard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #FF5B1F;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .hcard-img {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 50%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.25) 100%);
+    mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.25) 100%);
+    z-index: 0;
+    pointer-events: none;
+  }
+  .hcard > div { position: relative; z-index: 1; }
+  .cards-track .hcard:hover {
+    border-color: #FF5B1F;
+    transform: translateY(-6px);
+  }
+  .cards-track .hcard:hover::before {
+    transform: scaleX(1);
+  }
+  .cards-track .hcard:hover .service-arrow {
+    transform: translateX(6px);
+    color: #FF5B1F;
+  }
+  .cards-track .hcard:first-child {
+    margin-left: 40px;
+  }
+  .cards-track .hcard:last-child {
+    margin-right: 100vw;
+  }
+  @media (max-width: 1100px) {
+    .cards-track { padding-top: 300px; }
+  }
+  @media (max-width: 768px) {
+    .cards-track .hcard {
+      width: 320px;
+      height: 400px;
+      padding: 24px 20px;
+    }
+    .cards-track .hcard:first-child {
+      margin-left: 20px;
+    }
+    .cards-header { padding: 28px 24px 0; }
+    .cards-track { padding-top: 200px; }
+  }
+
+  /* ── Features section (wownav-style) ── */
+  .features {
+    overflow: hidden;
+    padding: 8rem 0;
+  }
+  .features__container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 40px;
+    display: flex;
+    flex-direction: column;
+  }
+  @media (min-width: 1024px) {
+    .features__container {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      grid-template-rows: auto 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+  }
+  .features__subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #FF5B1F;
+    margin-bottom: 2rem;
+  }
+  @media (min-width: 1024px) {
+    .features__subtitle {
+      grid-column: 1 / span 4;
+      grid-row: 1;
+    }
+  }
+  .features__images {
+    display: flex;
+    gap: 1.5rem;
+    margin: 3.5rem 0;
+  }
+  @media (min-width: 1024px) {
+    .features__images {
+      grid-column: 6 / -1;
+      grid-row: 1 / -1;
+      margin: 0;
+    }
+  }
+  .features__image-large {
+    flex: 3;
+    aspect-ratio: 710 / 740;
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+  }
+  .features__image-large-item {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+  .features__image-large-item.is-active {
+    opacity: 1;
+  }
+  .features__image-small {
+    flex: 1;
+    aspect-ratio: 259 / 330;
+    overflow: hidden;
+    border-radius: 10px;
+  }
+  .features__image-small img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .features__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem 1.5rem;
+  }
+  @media (min-width: 1024px) {
+    .features__grid {
+      grid-column: 1 / span 4;
+      grid-row: 2;
+      margin-top: auto;
+    }
+  }
+  .features__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .features__number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.5rem, 1.5rem + 0.5vw, 2rem);
+    color: #FF5B1F;
+    letter-spacing: 0.02em;
+  }
+  .features__description {
+    font-size: 0.875rem;
+    color: #c5c5c8;
+    line-height: 1.6;
+  }
+
+  /* ── Fan stack cards ── */
+  .fan-stack {
+    position: relative;
+    width: 600px;
+    height: 400px;
+  }
+  .fan-card {
+    position: absolute;
+    width: 280px;
+    height: 360px;
+    left: 50%;
+    bottom: 0;
+    margin-left: -100px;
+    transform-origin: 50% 110%;
+    will-change: transform;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    cursor: pointer;
+    transition: filter 0.3s, box-shadow 0.3s;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .fan-card:hover {
+    box-shadow: 0 12px 40px rgba(255,91,31,0.25), 0 8px 30px rgba(0,0,0,0.4);
+    filter: brightness(1.1);
+  }
+  @media (max-width: 768px) {
+    .fan-stack { width: 320px; height: 260px; }
+    .fan-card { width: 160px; height: 210px; margin-left: -80px; }
+  }
+
+  .toast {
+    animation: slideIn 0.3s ease-out;
+  }
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* ── Liquid pill nav ── */
+  .liquid-pill {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 34px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 10px;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.5),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.06),
+      0 2px 12px rgba(0, 0, 0, 0.12);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+    left: 0;
+    right: 100%;
+  }
+  .nav-dropdown-wrap,
+  #liquidNavWrap > .nav-link {
+    position: relative;
+    z-index: 1;
+  }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- UTILITY BAR — įdėti prieš <div id="mainNav" ...> -->
+<div id="utilityBar" class="w-full bg-ink/80 backdrop-blur border-b border-white/5 text-xs text-bone mono py-1.5 px-4 hidden md:block">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-6">
+        <a href="tel:+37060012345" class="flex items-center gap-1.5 hover:text-flame transition-colors">
+          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="#FF5B1F" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+          +370 600 12 345
+        </a>
+        <a href="https://maps.google.com/?q=Savanorių+pr.+124+Vilnius" target="_blank" class="flex items-center gap-1.5 hover:text-flame transition-colors">
+          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="#FF5B1F" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          Savanorių pr. 124, Vilnius
+        </a>
+        <span class="flex items-center gap-1.5">
+          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="#FF5B1F" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          I–V 08:00–18:00 &nbsp;·&nbsp; VI 09:00–14:00
+        </span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="flex items-center gap-1.5 text-green-500">
+          <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse inline-block"></span>
+          Dirba dabar
+        </span>
+      </div>
+    </div>
+</div>
+
+<div id="mainNav" class="nav-pill">
+  <div class="nav-glass">
+    <div class="nav-inner">
+
+      <a href="#" class="flex items-center gap-3 group shrink-0">
+        <div class="w-9 h-9 bg-flame rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+          <svg class="w-5 h-5 text-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path><circle cx="12" cy="12" r="10" stroke-width="2"></circle></svg>
+        </div>
+        <div>
+          <div class="display text-xl leading-none tracking-wider">MOTORCITY</div>
+          <div class="text-[9px] text-chrome mono tracking-widest">VILNIUS · SINCE 2014</div>
+        </div>
+      </a>
+
+      <div class="hidden lg:flex items-center gap-1 relative" id="liquidNavWrap">
+        <div id="liquidPill" class="liquid-pill"></div>
+
+        <div class="nav-dropdown-wrap liquid-nav-item">
+          <a href="#services" class="nav-link text-sm text-bone/70 hover:text-bone px-4 py-2 inline-block">Paslaugos</a>
+          <div class="mega-dropdown">
+            <div class="grid grid-cols-3 gap-1">
+              <div class="mega-item" onclick="openBooking('Alyvos keitimas')">
+                <div class="mega-title text-sm font-semibold text-flame mb-1 transition-colors">Alyvos keitimas</div>
+                <div class="text-xs text-bone leading-relaxed">Sintetinė ar mineralinė alyva, filtro pakeitimas, lygmens patikra.</div>
+              </div>
+              <div class="mega-item" onclick="openBooking('Padangų keitimas')">
+                <div class="mega-title text-sm font-semibold text-flame mb-1 transition-colors">Padangų keitimas</div>
+                <div class="text-xs text-bone leading-relaxed">Sezoninis keitimas, balansavimas, montavimas ir slėgio patikra.</div>
+              </div>
+              <div class="mega-item" onclick="openBooking('Diagnostika')">
+                <div class="mega-title text-sm font-semibold text-flame mb-1 transition-colors">OBD diagnostika</div>
+                <div class="text-xs text-bone leading-relaxed">Pilnas elektronikos skanavimas, klaidų kodai, ataskaita.</div>
+              </div>
+              <div class="mega-item" onclick="openBooking('Stabdžių remontas')">
+                <div class="mega-title text-sm font-semibold text-flame mb-1 transition-colors">Stabdžių darbai</div>
+                <div class="text-xs text-bone leading-relaxed">Kaladėlės, diskai, suportai, hidraulika, ABS diagnostika.</div>
+              </div>
+              <div class="mega-item" onclick="openBooking('Variklio remontas')">
+                <div class="mega-title text-sm font-semibold text-flame mb-1 transition-colors">Variklio remontas</div>
+                <div class="text-xs text-bone leading-relaxed">Gedimų lokalizavimas, generalinis remontas, GRM, sankaba.</div>
+              </div>
+              <div class="mega-item" onclick="openBooking('Pakaba ir vairas')">
+                <div class="mega-title text-sm font-semibold text-flame mb-1 transition-colors">Pakaba · Vairas</div>
+                <div class="text-xs text-bone leading-relaxed">Amortizatoriai, svirtys, vairo geometrija, traukės.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <a href="#about" class="nav-link liquid-nav-item text-sm text-bone/70 hover:text-bone px-4 py-2 inline-block">Apie mus</a>
+        
+        <div class="nav-dropdown-wrap liquid-nav-item">
+          <a href="#reviews" class="nav-link text-sm text-bone/70 hover:text-bone px-4 py-2 inline-block">Atsiliepimai</a>
+          <div class="mega-dropdown">
+            <div class="grid grid-cols-3 gap-4">
+              <div class="mega-review-card">
+                <div class="flex gap-1 mb-3">
+                  <svg class="w-3.5 h-3.5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                  <svg class="w-3.5 h-3.5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                  <svg class="w-3.5 h-3.5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                  <svg class="w-3.5 h-3.5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                  <svg class="w-3.5 h-3.5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                </div>
+                <p class="text-xs text-bone/80 leading-relaxed mb-3">„Pirmas servisas Vilniuje, kur pasakė tiesą — kad dalies keisti nereikia. Sutaupė 400 €."</p>
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 bg-flame/20 rounded-full flex items-center justify-center text-flame text-[10px] font-semibold">TK</div>
+                  <div>
+                    <div class="text-xs font-medium text-bone">Tomas K.</div>
+                    <div class="text-[10px] text-chrome">BMW 320d · 2018</div>
+                  </div>
+                </div>
+              </div>
+              <div class="mega-review-card">
+                <div class="flex gap-1 mb-3">
+                  <svg class="w-3.5 h-3.5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                  <svg class="w-3.5 h-3.5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                  <svg class="w-3.5 h-3.5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                  <svg class="w-3.5 h-3.5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                  <svg class="w-3.5 h-3.5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                </div>
+                <p class="text-xs text-bone/80 leading-relaxed mb-3">„Registracija online — per 2 min užsiregistravau, gavau SMS patvirtinimą. Servisas modernus."</p>
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 bg-flame/20 rounded-full flex items-center justify-center text-flame text-[10px] font-semibold">VM</div>
+                  <div>
+                    <div class="text-xs font-medium text-bone">Vaida M.</div>
+                    <div class="text-[10px] text-chrome">VW Golf · 2020</div>
+                  </div>
+                </div>
+              </div>
+              <div class="mega-review-card">
+                <div class="flex gap-1 mb-3">
+                  <svg class="w-3.5 h-3.5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                  <svg class="w-3.5 h-3.5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                  <svg class="w-3.5 h-3.5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                  <svg class="w-3.5 h-3.5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                  <svg class="w-3.5 h-3.5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                </div>
+                <p class="text-xs text-bone/80 leading-relaxed mb-3">„Stabdžių sistema buvo paveldima. Po remonto — kaip naujas. Kainos sąžiningos, su garantija."</p>
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 bg-flame/20 rounded-full flex items-center justify-center text-flame text-[10px] font-semibold">RD</div>
+                  <div>
+                    <div class="text-xs font-medium text-bone">Rolandas D.</div>
+                    <div class="text-[10px] text-chrome">Audi A4 · 2015</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center justify-between mt-4 pt-4 border-t border-white/10">
+              <div class="flex items-center gap-2">
+                <div class="display text-3xl text-flame leading-none">4.9</div>
+                <div class="text-[10px] text-chrome mono">/ 5 · 312 VERT.</div>
+              </div>
+              <a href="#reviews" class="text-xs text-flame hover:text-bone transition-colors mono">Visi atsiliepimai →</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-dropdown-wrap liquid-nav-item">
+          <a href="#contact" class="nav-link text-sm text-bone/70 hover:text-bone px-4 py-2 inline-block">Kontaktai</a>
+          <div class="mega-dropdown">
+            <div class="grid grid-cols-2 gap-6">
+              <div class="space-y-5">
+                <div class="flex gap-3">
+                  <div class="w-9 h-9 bg-flame/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-flame" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  </div>
+                  <div>
+                    <div class="text-xs text-chrome mono mb-0.5">ADRESAS</div>
+                    <div class="text-sm font-medium text-bone">Savanorių pr. 124, Vilnius</div>
+                  </div>
+                </div>
+                <div class="flex gap-3">
+                  <div class="w-9 h-9 bg-flame/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-flame" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                  </div>
+                  <div>
+                    <div class="text-xs text-chrome mono mb-0.5">TELEFONAS</div>
+                    <a href="tel:+37060012345" class="text-sm font-medium text-bone hover:text-flame transition-colors">+370 600 12 345</a>
+                  </div>
+                </div>
+                <div class="flex gap-3">
+                  <div class="w-9 h-9 bg-flame/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-flame" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  </div>
+                  <div>
+                    <div class="text-xs text-chrome mono mb-0.5">DARBO LAIKAS</div>
+                    <div class="text-sm font-medium text-bone">I–V 08:00–18:00</div>
+                    <div class="text-xs text-chrome">Šeštadieniais iki 14:00</div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div class="text-xs text-chrome mono mb-3">GREITA UŽKLAUSA</div>
+                <form onsubmit="event.preventDefault(); navContactSend(this);" class="space-y-2">
+                  <input type="text" placeholder="Jūsų vardas" class="w-full px-3 py-2 rounded-lg text-xs !bg-ink/60 !border-smoke/50">
+                  <input type="tel" placeholder="+370..." class="w-full px-3 py-2 rounded-lg text-xs !bg-ink/60 !border-smoke/50">
+                  <textarea rows="2" placeholder="Trumpai aprašykite klausimą..." class="w-full px-3 py-2 rounded-lg text-xs !bg-ink/60 !border-smoke/50 resize-none"></textarea>
+                  <button type="submit" class="btn-flame text-ink font-semibold px-4 py-2 rounded-lg text-xs w-full">Siųsti užklausą</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        <a href="admin.html" class="text-xs text-chrome/60 hover:text-flame mono px-3 py-2 transition-colors">admin</a>
+
+      </div>
+
+      <div class="flex items-center gap-4">
+        <button onclick="openBooking()" class="hidden md:flex btn-flame text-ink font-semibold px-5 py-2 rounded-full text-sm items-center gap-2">
+          Registruotis
+        </button>
+        <button id="hamburgerBtn" class="hamburger lg:hidden" onclick="toggleMobileMenu()" aria-label="Menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="mobileMenu" class="mobile-menu">
+  <nav class="flex flex-col items-center gap-1">
+    <a href="#services" onclick="toggleMobileMenu()" class="menu-link display text-5xl md:text-7xl hover:text-flame py-2">PASLAUGOS</a>
+    <a href="#about" onclick="toggleMobileMenu()" class="menu-link display text-5xl md:text-7xl hover:text-flame py-2">APIE MUS</a>
+    <a href="#reviews" onclick="toggleMobileMenu()" class="menu-link display text-5xl md:text-7xl hover:text-flame py-2">ATSILIEPIMAI</a>
+    <a href="#contact" onclick="toggleMobileMenu()" class="menu-link display text-5xl md:text-7xl hover:text-flame py-2">KONTAKTAI</a>
+    <div class="menu-divider"></div>
+    <a href="admin.html" class="menu-link text-sm text-chrome mono hover:text-flame">→ admin panel</a>
+    <button onclick="toggleMobileMenu(); openBooking();" class="menu-link btn-flame text-ink font-semibold px-8 py-3 rounded-full text-sm mt-4 flex items-center gap-2">
+      Registruotis
+    </button>
+  </nav>
+</div>
+
+<section class="relative min-h-screen flex items-end overflow-hidden pt-20">
+  <div class="absolute inset-0 grid-bg opacity-50"></div>
+  <div class="absolute inset-0 grain opacity-30 pointer-events-none"></div>
+  <div class="absolute top-0 right-0 w-1/2 h-full">
+    <img src="motor-hero-1.webp" alt="" class="w-full h-full object-cover object-center" style="-webkit-mask-image: linear-gradient(to left, rgba(0,0,0,0.55) 0%, transparent 100%); mask-image: linear-gradient(to left, rgba(0,0,0,0.55) 0%, transparent 100%);">
+    <!-- <div class="diagonal-stripes w-full h-full opacity-10"></div> -->
+  </div>
+
+  <div class="absolute top-32 right-10 hidden lg:block reveal" style="animation-delay: 0.4s">
+    <div class="border border-flame/30 rounded-2xl p-4 bg-ash/60 backdrop-blur w-64">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-xs text-chrome mono">// status</div>
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+          <div class="text-xs text-green-500 mono">DIRBA DABAR</div>
+        </div>
+      </div>
+      <div class="text-xs text-chrome mb-1">Šiandienai laisva:</div>
+      <div class="display text-4xl text-flame">04:30</div>
+      <div class="text-xs text-chrome mono">val. iš 16:00</div>
+    </div>
+  </div>
+
+  <div class="relative max-w-7xl mx-auto px-6 lg:px-10 pb-20 pt-32 w-full">
+    <div class="reveal" style="animation-delay: 0.1s">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 border border-flame/40 bg-flame/10 rounded-full text-xs text-flame mono mb-8">
+        <div class="w-1.5 h-1.5 rounded-full bg-flame animate-pulse"></div>
+        UAB MotorCity · ATEX/TÜV sertifikuotas
+      </div>
+    </div>
+
+    <h1 class="display text-7xl md:text-9xl leading-[0.9] mb-8 reveal" style="animation-delay: 0.2s">
+      JŪSŲ AUTO<br>
+      <span class="text-flame glow-text">VERTAS RŪPESČIO.</span>
+    </h1>
+
+    <div class="grid md:grid-cols-3 gap-8 mb-10 max-w-4xl reveal" style="animation-delay: 0.3s">
+      <div>
+        <div class="display text-5xl text-flame">12</div>
+        <div class="text-sm text-chrome mt-1">metų patirties</div>
+      </div>
+      <div>
+        <div class="display text-5xl text-flame">4.9<span class="text-2xl">/5</span></div>
+        <div class="text-sm text-chrome mt-1">Google atsiliepimai · 312 vert.</div>
+      </div>
+      <div>
+        <div class="display text-5xl text-flame">8400+</div>
+        <div class="text-sm text-chrome mt-1">aptarnautų automobilių</div>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-4 reveal" style="animation-delay: 0.5s">
+      <button onclick="openBooking()" class="btn-flame text-ink font-semibold px-8 py-4 rounded-lg flex items-center gap-3">
+        Registruotis online
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+      </button>
+      <a href="tel:+37060012345" class="border border-bone/30 px-8 py-4 rounded-lg flex items-center gap-3 hover:border-flame hover:text-flame transition">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+        +370 600 12 345
+      </a>
+    </div>
+  </div>
+</section>
+
+<div class="bg-flame text-ink overflow-hidden py-3 border-y-2 border-ink">
+  <div class="flex marquee whitespace-nowrap">
+    <div class="flex items-center gap-12 px-6 display text-2xl">
+      <span>★ ALYVOS KEITIMAS</span><span>★</span>
+      <span>STABDŽIŲ REMONTAS</span><span>★</span>
+      <span>VARIKLIO DIAGNOSTIKA</span><span>★</span>
+      <span>PADANGŲ MONTAVIMAS</span><span>★</span>
+      <span>KOROZIJOS DARBAI</span><span>★</span>
+      <span>SU GARANTIJA 12 MĖN.</span><span>★</span>
+    </div>
+    <div class="flex items-center gap-12 px-6 display text-2xl">
+      <span>★ ALYVOS KEITIMAS</span><span>★</span>
+      <span>STABDŽIŲ REMONTAS</span><span>★</span>
+      <span>VARIKLIO DIAGNOSTIKA</span><span>★</span>
+      <span>PADANGŲ MONTAVIMAS</span><span>★</span>
+      <span>KOROZIJOS DARBAI</span><span>★</span>
+      <span>SU GARANTIJA 12 MĖN.</span><span>★</span>
+    </div>
+  </div>
+</div>
+
+<section id="services" class="cards-section">
+  <div class="cards-header">
+    <div class="flex items-end justify-between flex-wrap gap-6 max-w-7xl mx-auto">
+      <div>
+        <div class="text-flame mono text-xs mb-3">// PASLAUGOS</div>
+        <h2 class="display text-5xl md:text-6xl leading-none">DARBAI KURIUOS ATLIEKAME</h2>
+      </div>
+      <p class="text-bone/80 text-sm max-w-sm">
+        Nuo paprastos alyvos keitimo iki sudėtingo variklio kapitalinio remonto. Su garantija.
+      </p>
+    </div>
+  </div>
+  <div class="cards-viewport">
+    <div class="cards-track">
+
+      <div class="hcard" onclick="openBooking('Alyvos keitimas')">
+        <img class="hcard-img" src="oil-change.webp" alt="" loading="lazy" decoding="async">
+        <div>
+          <div class="flex justify-between items-start mb-8">
+            <div class="w-14 h-14 bg-flame/10 rounded-md flex items-center justify-center">
+              <svg class="w-7 h-7 text-flame" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+            </div>
+            <div class="mono text-xs text-bone">30 MIN</div>
+          </div>
+          <div class="display text-4xl mb-3">ALYVOS KEITIMAS</div>
+          <div class="text-bone/80 text-sm leading-relaxed">Pilnai sintetinė ar mineralinė alyva, filtro pakeitimas, lygmens patikrinimas.</div>
+        </div>
+        <div class="flex items-center justify-between border-t border-smoke pt-5 mt-6">
+          <div>
+            <div class="text-xs text-bone mono">NUO</div>
+            <div class="display text-3xl text-flame">29 €</div>
+          </div>
+          <svg class="service-arrow w-6 h-6 text-bone transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+        </div>
+      </div>
+
+      <div class="hcard" onclick="openBooking('Padangų keitimas')">
+        <img class="hcard-img" src="tire-change-3.webp" alt="" loading="lazy" decoding="async">
+        <div>
+          <div class="flex justify-between items-start mb-8">
+            <div class="w-14 h-14 bg-flame/10 rounded-md flex items-center justify-center">
+              <svg class="w-7 h-7 text-flame" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+            </div>
+            <div class="mono text-xs text-bone">45 MIN</div>
+          </div>
+          <div class="display text-4xl mb-3">PADANGŲ KEITIMAS</div>
+          <div class="text-bone/80 text-sm leading-relaxed">Sezoninis keitimas, balansavimas, montavimas, slėgio patikra.</div>
+        </div>
+        <div class="flex items-center justify-between border-t border-smoke pt-5 mt-6">
+          <div>
+            <div class="text-xs text-bone mono">NUO</div>
+            <div class="display text-3xl text-flame">15 €/vnt</div>
+          </div>
+          <svg class="service-arrow w-6 h-6 text-bone transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+        </div>
+      </div>
+
+      <div class="hcard" onclick="openBooking('Diagnostika')">
+        <img class="hcard-img" src="diagnostics.webp" alt="" loading="lazy" decoding="async">
+        <div>
+          <div class="flex justify-between items-start mb-8">
+            <div class="w-14 h-14 bg-flame/10 rounded-md flex items-center justify-center">
+              <svg class="w-7 h-7 text-flame" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z"></path></svg>
+            </div>
+            <div class="mono text-xs text-bone">60 MIN</div>
+          </div>
+          <div class="display text-4xl mb-3">OBD DIAGNOSTIKA</div>
+          <div class="text-bone/80 text-sm leading-relaxed">Pilnas elektronikos skanavimas, klaidų kodų skaitymas, ataskaita.</div>
+        </div>
+        <div class="flex items-center justify-between border-t border-smoke pt-5 mt-6">
+          <div>
+            <div class="text-xs text-bone mono">NUO</div>
+            <div class="display text-3xl text-flame">49 €</div>
+          </div>
+          <svg class="service-arrow w-6 h-6 text-bone transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+        </div>
+      </div>
+
+      <div class="hcard" onclick="openBooking('Stabdžių remontas')">
+        <img class="hcard-img" src="brake-change.webp" alt="" loading="lazy" decoding="async">
+        <div>
+          <div class="flex justify-between items-start mb-8">
+            <div class="w-14 h-14 bg-flame/10 rounded-md flex items-center justify-center">
+              <svg class="w-7 h-7 text-flame" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <div class="mono text-xs text-bone">120 MIN</div>
+          </div>
+          <div class="display text-4xl mb-3">STABDŽIŲ DARBAI</div>
+          <div class="text-bone/80 text-sm leading-relaxed">Kaladėlės, diskai, suportai, hidraulinė sistema, ABS diagnostika.</div>
+        </div>
+        <div class="flex items-center justify-between border-t border-smoke pt-5 mt-6">
+          <div>
+            <div class="text-xs text-bone mono">NUO</div>
+            <div class="display text-3xl text-flame">89 €</div>
+          </div>
+          <svg class="service-arrow w-6 h-6 text-bone transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+        </div>
+      </div>
+
+      <div class="hcard" onclick="openBooking('Variklio remontas')">
+        <img class="hcard-img" src="engine-change.webp" alt="" loading="lazy" decoding="async">
+        <div>
+          <div class="flex justify-between items-start mb-8">
+            <div class="w-14 h-14 bg-flame/10 rounded-md flex items-center justify-center">
+              <svg class="w-7 h-7 text-flame" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            </div>
+            <div class="mono text-xs text-bone">180 MIN</div>
+          </div>
+          <div class="display text-4xl mb-3">VARIKLIO REMONTAS</div>
+          <div class="text-bone/80 text-sm leading-relaxed">Gedimų lokalizavimas, generalinis remontas, GRM, sankaba.</div>
+        </div>
+        <div class="flex items-center justify-between border-t border-smoke pt-5 mt-6">
+          <div>
+            <div class="text-xs text-bone mono">NUO</div>
+            <div class="display text-3xl text-flame">150 €</div>
+          </div>
+          <svg class="service-arrow w-6 h-6 text-bone transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+        </div>
+      </div>
+
+      <div class="hcard" onclick="openBooking('Pakaba ir vairas')">
+        <img class="hcard-img" src="pakaba-fix.webp" alt="" loading="lazy" decoding="async">
+        <div>
+          <div class="flex justify-between items-start mb-8">
+            <div class="w-14 h-14 bg-flame/10 rounded-md flex items-center justify-center">
+              <svg class="w-7 h-7 text-flame" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            </div>
+            <div class="mono text-xs text-bone">90 MIN</div>
+          </div>
+          <div class="display text-4xl mb-3">PAKABA · VAIRAS</div>
+          <div class="text-bone/80 text-sm leading-relaxed">Amortizatoriai, svirtys, jungtys, vairo geometrija, traukės.</div>
+        </div>
+        <div class="flex items-center justify-between border-t border-smoke pt-5 mt-6">
+          <div>
+            <div class="text-xs text-bone mono">NUO</div>
+            <div class="display text-3xl text-flame">69 €</div>
+          </div>
+          <svg class="service-arrow w-6 h-6 text-bone transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section id="about" class="py-24 px-6 lg:px-10 bg-ash">
+  <div class="max-w-7xl py-36 mx-auto grid md:grid-cols-12 gap-12">
+    <div class="md:col-span-5">
+      <div class="text-flame mono text-xs mb-3">// APIE MUS</div>
+      <h2 class="display text-6xl leading-none mb-6">12 METŲ.<br>VIENAS<br>TIKSLAS.</h2>
+      <p class="text-bone/70 mb-6">
+        2014 m. MotorCity pradėjo veiklą kaip dvejų mechanikų dirbtuvė Vilniaus Naujamiestyje. Šiandien — 4 darbo postai, 6 sertifikuoti meistrai, originalių dalių sandėlis.
+      </p>
+      <p class="text-bone/70">
+        Mūsų principas paprastas: <span class="text-flame">jokio dauginimo iš oro, jokios suklastotos diagnostikos.</span> Tik tai, kas reikia. Tik už tikrąją kainą.
+      </p>
+    </div>
+    <div class="md:col-span-7 flex items-center justify-center">
+      <div id="fanStack" class="fan-stack">
+        <div class="fan-card border border-smoke bg-ink rounded-2xl p-6">
+          <div class="display text-5xl text-flame mb-2">6</div>
+          <div class="text-sm text-bone/70">sertifikuoti mechanikai</div>
+          <div class="text-xs text-chrome mono mt-2">// ATA · IMI · TÜV</div>
+        </div>
+        <div class="fan-card border border-smoke bg-ink rounded-2xl p-6">
+          <div class="display text-5xl text-flame mb-2">4</div>
+          <div class="text-sm text-bone/70">darbo postai</div>
+          <div class="text-xs text-chrome mono mt-2">// 2 lygiagretūs srautai</div>
+        </div>
+        <div class="fan-card border border-smoke bg-ink rounded-2xl p-6">
+          <div class="display text-5xl text-flame mb-2">12</div>
+          <div class="text-sm text-bone/70">mėn. garantija</div>
+          <div class="text-xs text-chrome mono mt-2">// visiems darbams</div>
+        </div>
+        <div class="fan-card border border-smoke bg-ink rounded-2xl p-6">
+          <div class="display text-5xl text-flame mb-2">48h</div>
+          <div class="text-sm text-bone/70">dalių pristatymas</div>
+          <div class="text-xs text-chrome mono mt-2">// originalios · OEM</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <div class="features__container">
+    <div class="features__subtitle">// Kodėl MotorLab</div>
+
+    <div class="features__images">
+      <div class="features__image-large">
+        <img class="features__image-large-item is-active" src="diagnostics.webp" alt="Autoservisas">
+        <img class="features__image-large-item" src="engine-change.webp" alt="Diagnostika">
+        <img class="features__image-large-item" src="pakaba-fix.webp" alt="Remontas">
+        <img class="features__image-large-item" src="tire-change-3.webp" alt="Rezultatas">
+      </div>
+      <div class="features__image-small">
+        <img src="motor-hero-1.webp" alt="MotorLab komanda">
+      </div>
+    </div>
+
+    <div class="features__grid">
+      <div class="features__item">
+        <div class="features__number">01</div>
+        <div class="features__description">Sąžininga diagnostika — mokate tik už tai, ko tikrai reikia jūsų automobiliui.</div>
+      </div>
+      <div class="features__item">
+        <div class="features__number">02</div>
+        <div class="features__description">Sertifikuoti meistrai su TÜV ir ATA kvalifikacijomis ir 12+ metų patirtimi.</div>
+      </div>
+      <div class="features__item">
+        <div class="features__number">03</div>
+        <div class="features__description">Originalios ir OEM kokybės dalys su 48h pristatymu tiesiai iš sandėlio.</div>
+      </div>
+      <div class="features__item">
+        <div class="features__number">04</div>
+        <div class="features__description">Pilna kainoraštis prieš darbus — jokių netikėtų sąskaitų ar paslėptų mokesčių.</div>
+      </div>
+      <div class="features__item">
+        <div class="features__number">05</div>
+        <div class="features__description">Online registracija per 2 minutes su realiu laiko kalendoriumi ir SMS patvirtinimu.</div>
+      </div>
+      <div class="features__item">
+        <div class="features__number">06</div>
+        <div class="features__description">12 mėnesių garantija visiems atliktiems darbams ir sumontuotoms dalims.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="reviews" class="py-36 px-6 lg:px-10 max-w-7xl mx-auto">
+  <div class="flex items-end justify-between mb-12 flex-wrap gap-6">
+    <div>
+      <div class="text-flame mono text-xs mb-3">// ATSILIEPIMAI</div>
+      <h2 class="display text-6xl leading-none">KĄ SAKO<br>KLIENTAI</h2>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="display text-7xl text-flame">4.9</div>
+      <div>
+        <div class="flex gap-1 mb-1">
+          <svg class="w-5 h-5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+          <svg class="w-5 h-5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+          <svg class="w-5 h-5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+          <svg class="w-5 h-5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+          <svg class="w-5 h-5 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+        </div>
+        <div class="text-xs text-chrome mono">312 Google atsiliepimai</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid md:grid-cols-3 gap-5">
+    <div class="border border-smoke rounded-sm p-6 bg-ash">
+      <div class="flex gap-1 mb-4">
+        <svg class="w-4 h-4 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+        <svg class="w-4 h-4 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+        <svg class="w-4 h-4 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+        <svg class="w-4 h-4 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+        <svg class="w-4 h-4 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+      </div>
+      <p class="text-bone/80 mb-4">„Pirmas servisas Vilniuje, kur pasakė tiesą — kad probleminis dalies keisti nereikia. Sutaupė man 400 €. Gražinau ir grąžinsiu."</p>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-flame/20 rounded-full flex items-center justify-center text-flame font-semibold">TK</div>
+        <div>
+          <div class="text-sm font-medium">Tomas K.</div>
+          <div class="text-xs text-chrome">BMW 320d · 2018</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="border border-smoke rounded-sm p-6 bg-ash">
+      <div class="flex gap-1 mb-4">
+        <svg class="w-4 h-4 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+        <svg class="w-4 h-4 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+        <svg class="w-4 h-4 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+        <svg class="w-4 h-4 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+        <svg class="w-4 h-4 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+      </div>
+      <p class="text-bone/80 mb-4">„Registracija online — ir nereikia skambinti. Per 2 min užsiregistravau, gavau SMS patvirtinimą. Servisas modernus, mechanikai mandagūs."</p>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-flame/20 rounded-full flex items-center justify-center text-flame font-semibold">VM</div>
+        <div>
+          <div class="text-sm font-medium">Vaida M.</div>
+          <div class="text-xs text-chrome">VW Golf · 2020</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="border border-smoke rounded-sm p-6 bg-ash">
+      <div class="flex gap-1 mb-4">
+        <svg class="w-4 h-4 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+        <svg class="w-4 h-4 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+        <svg class="w-4 h-4 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+        <svg class="w-4 h-4 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+        <svg class="w-4 h-4 text-flame" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+      </div>
+      <p class="text-bone/80 mb-4">„Stabdžių sistema buvo paveldima. Vairavo savaitę po remonto — kaip naujas automobilis. Kainos labai sąžiningos, su garantija."</p>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-flame/20 rounded-full flex items-center justify-center text-flame font-semibold">RD</div>
+        <div>
+          <div class="text-sm font-medium">Rolandas D.</div>
+          <div class="text-xs text-chrome">Audi A4 · 2015</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="contact" class="py-24 px-6 lg:px-10 bg-ash border-t border-smoke">
+  <div class="max-w-7xl mx-auto grid md:grid-cols-2 gap-12">
+    <div>
+      <div class="text-flame mono text-xs mb-3">// KONTAKTAI</div>
+      <h2 class="display text-6xl leading-none mb-8">KUR MUS<br>RASTI?</h2>
+      <div class="space-y-6">
+        <div class="flex gap-4">
+          <div class="w-10 h-10 bg-flame/10 rounded-lg flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-flame" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          </div>
+          <div>
+            <div class="text-xs text-chrome mono mb-1">ADRESAS</div>
+            <div class="font-medium">Savanorių pr. 124, Vilnius</div>
+            <div class="text-sm text-bone/60">LT-03153 · Naujamiesčio rajonas</div>
+          </div>
+        </div>
+        <div class="flex gap-4">
+          <div class="w-10 h-10 bg-flame/10 rounded-lg flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-flame" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+          </div>
+          <div>
+            <div class="text-xs text-chrome mono mb-1">TELEFONAS</div>
+            <a href="tel:+37060012345" class="font-medium hover:text-flame">+370 600 12 345</a>
+            <div class="text-sm text-bone/60">Skambinkite I-V 8:00-18:00</div>
+          </div>
+        </div>
+        <div class="flex gap-4">
+          <div class="w-10 h-10 bg-flame/10 rounded-lg flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-flame" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </div>
+          <div>
+            <div class="text-xs text-chrome mono mb-1">DARBO LAIKAS</div>
+            <div class="font-medium">Pirmadiensis – Penktadiensis</div>
+            <div class="text-sm text-bone/60">08:00 – 18:00 · šeštadieniais iki 14:00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="rounded-2xl overflow-hidden h-96 md:h-auto border border-smoke">
+      <iframe src="https://www.openstreetmap.org/export/embed.html?bbox=25.243,54.685,25.293,54.700&layer=mapnik&marker=54.6924,25.268" class="w-full h-full" style="filter: invert(0.85) hue-rotate(180deg);"></iframe>
+    </div>
+  </div>
+</section>
+
+<footer class="bg-ink py-12 px-6 lg:px-10 border-t border-smoke">
+  <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-flame rounded flex items-center justify-center">
+        <svg class="w-5 h-5 text-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+      </div>
+      <div class="text-sm text-chrome">© 2026 MotorCity · Visos teisės saugomos</div>
+    </div>
+    <div class="flex items-center gap-6 text-sm text-chrome">
+      <a href="#" class="hover:text-flame">Privatumo politika</a>
+      <a href="#" class="hover:text-flame">Slapukai</a>
+      <a href="admin.html" class="hover:text-flame mono">admin →</a>
+    </div>
+  </div>
+</footer>
+
+<div id="bookingModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/80 backdrop-blur p-4">
+  <div class="bg-ash border border-smoke rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+
+    <div class="sticky top-0 bg-ash border-b border-smoke px-6 py-4 flex items-center justify-between z-10">
+      <div>
+        <div class="text-xs text-chrome mono">// REGISTRACIJA</div>
+        <div class="display text-2xl mt-1">UŽSAKYTI VIZITĄ</div>
+      </div>
+      <button onclick="closeBooking()" class="w-10 h-10 rounded-lg border border-smoke hover:border-flame hover:text-flame flex items-center justify-center transition">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+
+    <div class="px-6 py-4 border-b border-smoke">
+      <div class="flex items-center gap-2">
+        <div id="step-1" class="step-indicator active w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold border border-smoke">1</div>
+        <div class="flex-1 h-px bg-smoke"></div>
+        <div id="step-2" class="step-indicator w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold border border-smoke text-chrome">2</div>
+        <div class="flex-1 h-px bg-smoke"></div>
+        <div id="step-3" class="step-indicator w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold border border-smoke text-chrome">3</div>
+        <div class="flex-1 h-px bg-smoke"></div>
+        <div id="step-4" class="step-indicator w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold border border-smoke text-chrome">4</div>
+      </div>
+      <div class="flex justify-between mt-2 text-[10px] mono text-chrome">
+        <span>PASLAUGA</span><span>DATA</span><span>KONTAKTAI</span><span>PATVIRTINIMAS</span>
+      </div>
+    </div>
+
+    <div class="p-6">
+
+      <div id="form-step-1">
+        <div class="text-sm text-chrome mb-4">Pasirinkite paslaugą:</div>
+        <div class="space-y-2" id="service-list"></div>
+      </div>
+
+      <div id="form-step-2" class="hidden">
+        <div class="text-sm text-chrome mb-4">Pasirinkite datą:</div>
+        <div class="bg-ink rounded-xl p-4 mb-4">
+          <div class="flex items-center justify-between mb-4">
+            <button onclick="changeMonth(-1)" class="w-8 h-8 rounded hover:bg-smoke flex items-center justify-center">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <div id="month-label" class="display text-xl"></div>
+            <button onclick="changeMonth(1)" class="w-8 h-8 rounded hover:bg-smoke flex items-center justify-center">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+          </div>
+          <div class="grid grid-cols-7 gap-1 mb-2">
+            <div class="text-center text-[10px] mono text-chrome py-1">PR</div>
+            <div class="text-center text-[10px] mono text-chrome py-1">AN</div>
+            <div class="text-center text-[10px] mono text-chrome py-1">TR</div>
+            <div class="text-center text-[10px] mono text-chrome py-1">KT</div>
+            <div class="text-center text-[10px] mono text-chrome py-1">PN</div>
+            <div class="text-center text-[10px] mono text-chrome py-1">ŠT</div>
+            <div class="text-center text-[10px] mono text-chrome py-1">SK</div>
+          </div>
+          <div id="calendar-grid" class="grid grid-cols-7 gap-1"></div>
+        </div>
+        <div id="time-section" class="hidden">
+          <div class="text-sm text-chrome mb-3">Laisvi laikai pasirinktą dieną:</div>
+          <div id="capacity-info" class="mb-3 text-xs"></div>
+          <div id="time-slots" class="grid grid-cols-4 gap-2"></div>
+        </div>
+      </div>
+
+      <div id="form-step-3" class="hidden space-y-4">
+        <div>
+          <label class="text-xs text-chrome mono block mb-2">JŪSŲ VARDAS *</label>
+          <input type="text" id="customer-name" placeholder="Vardas Pavardė" class="w-full px-4 py-3 rounded-lg">
+        </div>
+        <div>
+          <label class="text-xs text-chrome mono block mb-2">TELEFONO NUMERIS *</label>
+          <input type="tel" id="customer-phone" placeholder="+370..." class="w-full px-4 py-3 rounded-lg">
+        </div>
+        <div>
+          <label class="text-xs text-chrome mono block mb-2">EL. PAŠTAS</label>
+          <input type="email" id="customer-email" placeholder="vardas@email.lt" class="w-full px-4 py-3 rounded-lg">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-chrome mono block mb-2">AUTOMOBILIO MARKĖ</label>
+            <input type="text" id="car-make" placeholder="VW, BMW, Toyota..." class="w-full px-4 py-3 rounded-lg">
+          </div>
+          <div>
+            <label class="text-xs text-chrome mono block mb-2">METAI</label>
+            <input type="text" id="car-year" placeholder="2018" class="w-full px-4 py-3 rounded-lg">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-chrome mono block mb-2">PROBLEMOS APRAŠYMAS</label>
+          <textarea id="customer-notes" rows="3" placeholder="Trumpai aprašykite gedimą ar pastebėjimus..." class="w-full px-4 py-3 rounded-lg resize-none"></textarea>
+        </div>
+      </div>
+
+      <div id="form-step-4" class="hidden">
+        <div class="text-center py-8">
+          <div class="w-20 h-20 bg-flame rounded-full mx-auto mb-6 flex items-center justify-center">
+            <svg class="w-10 h-10 text-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+          </div>
+          <div class="display text-4xl mb-2">REZERVACIJA PRIIMTA</div>
+          <div class="text-bone/70 mb-6">Patvirtinimo numeris: <span id="confirm-num" class="text-flame mono font-semibold"></span></div>
+          <div class="bg-ink border border-smoke rounded-xl p-6 text-left max-w-md mx-auto space-y-3">
+            <div class="flex justify-between text-sm">
+              <span class="text-chrome">Paslauga:</span>
+              <span id="sum-service" class="font-medium"></span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-chrome">Data ir laikas:</span>
+              <span id="sum-when" class="font-medium"></span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-chrome">Trukmė:</span>
+              <span id="sum-duration" class="font-medium"></span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-chrome">Klientas:</span>
+              <span id="sum-name" class="font-medium"></span>
+            </div>
+          </div>
+          <div class="text-xs text-chrome mt-6">SMS patvirtinimas išsiųstas. Iki susitikimo!</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="form-footer" class="sticky bottom-0 bg-ash border-t border-smoke px-6 py-4 flex items-center justify-between">
+      <button id="btn-back" onclick="prevStep()" class="text-sm text-chrome hover:text-bone flex items-center gap-2 invisible">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Atgal
+      </button>
+      <button id="btn-next" onclick="nextStep()" class="btn-flame text-ink font-semibold px-6 py-3 rounded-lg flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed" disabled>
+        Toliau
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="fixed bottom-6 right-6 z-[200] space-y-2"></div>
+
+<script>
+function navContactSend(form) {
+  var inputs = form.querySelectorAll('input, textarea');
+  var name = inputs[0].value.trim();
+  var phone = inputs[1].value.trim();
+  if (!name || !phone) { alert('Įveskite vardą ir telefono numerį'); return; }
+  inputs.forEach(function(i) { i.value = ''; });
+  var toast = document.createElement('div');
+  toast.className = 'toast bg-flame text-ink px-5 py-3 rounded-lg text-sm font-semibold';
+  toast.textContent = 'Užklausa išsiųsta! Susisieksime greitai.';
+  document.getElementById('toast-container').appendChild(toast);
+  setTimeout(function() { toast.remove(); }, 4000);
+}
+
+function toggleMobileMenu() {
+  const menu = document.getElementById('mobileMenu');
+  const btn = document.getElementById('hamburgerBtn');
+  const isOpen = menu.classList.contains('open');
+  menu.classList.toggle('open');
+  btn.classList.toggle('active');
+  document.body.style.overflow = isOpen ? '' : 'hidden';
+}
+
+(function() {
+  const nav = document.getElementById('mainNav');
+  const utilityBar = document.getElementById('utilityBar');
+  let ticking = false;
+  window.addEventListener('scroll', function() {
+    if (!ticking) {
+      requestAnimationFrame(function() {
+        const utilityHeight = utilityBar ? utilityBar.offsetHeight : 0;
+        nav.classList.toggle('scrolled', window.scrollY > 50);
+        nav.classList.toggle('utility-hidden', window.scrollY >= utilityHeight);
+        ticking = false;
+      });
+      ticking = true;
+    }
+  });
+
+  // ── Horizontal scroll services ──
+  gsap.registerPlugin(ScrollTrigger);
+
+  (function() {
+    var section = document.querySelector('.cards-section');
+    var track = document.querySelector('.cards-track');
+    var hcards = gsap.utils.toArray('.cards-track .hcard');
+
+    // PHASE 2: Horizontal card scroll
+    function initHorizontalScroll() {
+      var lastCard = hcards[hcards.length - 1];
+      var horizontalDistance = lastCard.offsetLeft + lastCard.offsetWidth - window.innerWidth + 80;
+      if (horizontalDistance < 0) horizontalDistance = 0;
+
+      ScrollTrigger.getAll().forEach(function(st) {
+        if (st.vars && st.vars._id === 'hscroll') st.kill();
+      });
+
+      gsap.to(track, {
+        x: -horizontalDistance,
+        ease: 'none',
+        scrollTrigger: {
+          _id: 'hscroll',
+          trigger: section,
+          start: 'top top',
+          end: '+=' + horizontalDistance * 1.2,
+          // scrub: 1, /* buvęs 1s lag — sukeldavo "užlagina" išeinant iš pin */
+          scrub: 0.35,
+          pin: true,
+          anticipatePin: 1,
+          fastScrollEnd: true,
+          invalidateOnRefresh: true
+        }
+      });
+    }
+
+    // Phase 2 first (pin spacer enters DOM), then Phase 1 measures with correct positions
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        initHorizontalScroll();
+
+        // PHASE 1: Expand from 15vh to fullscreen — created after Phase 2 pin spacer exists
+        var expandTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: 'top bottom',
+            end: 'top top',
+            scrub: true,
+            pin: false,
+            invalidateOnRefresh: true
+          }
+        });
+        expandTl
+          .fromTo(section, { clipPath: 'inset(0 0 85% 0)' }, { clipPath: 'inset(0 0 0% 0)', ease: 'none' }, 0)
+          .fromTo(track, { scale: 0.85 }, { scale: 1, ease: 'none' }, 0);
+      });
+    });
+
+    var resizeTimer;
+    window.addEventListener('resize', function() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function() {
+        ScrollTrigger.refresh();
+      }, 250);
+    });
+  })();
+
+  // Fan stack expand animation
+  (function() {
+    var cards = gsap.utils.toArray('#fanStack .fan-card');
+    var total = cards.length;
+
+    // Initial stacked state
+    cards.forEach(function(card, i) {
+      gsap.set(card, {
+        rotation: (i - 1.5) * 1.5,
+        y: (total - 1 - i) * -3,
+        zIndex: i,
+        scale: 1
+      });
+    });
+
+    var fanAngles = [-32, -12, 12, 32];
+    var fanY =      [ -10,  -20, -20, -10];
+
+    gsap.to(cards, {
+      rotation: function(i) { return fanAngles[i]; },
+      y: function(i) { return fanY[i]; },
+      scale: 1,
+      stagger: 0.05,
+      scrollTrigger: {
+        trigger: '#fanStack',
+        start: 'top 85%',
+        end: 'top 50%',
+        scrub: true
+      }
+    });
+
+    // Hover: card pops up and comes to front
+    cards.forEach(function(card, i) {
+      card.addEventListener('mouseenter', function() {
+        gsap.to(card, {
+          y: fanY[i] - 40,
+          scale: 1.08,
+          zIndex: 10,
+          duration: 0.35,
+          ease: 'back.out(2)',
+          overwrite: 'auto'
+        });
+      });
+    card.addEventListener('mouseleave', function() {
+      gsap.to(card, {
+        y: fanY[i],
+        scale: 1,
+        zIndex: i,
+        duration: 0.35,
+        ease: 'power2.out',
+        overwrite: 'auto'
+      });
+    });
+  });
+  })();
+
+  // ── Features section animations ──
+  (function() {
+    var feat = document.querySelector('.features');
+    if (!feat) return;
+
+    // Subtitle fade in
+    gsap.from('.features__subtitle', {
+      opacity: 0, y: 16, duration: 0.8, ease: 'power2.out',
+      scrollTrigger: { trigger: '.features__subtitle', start: 'top 80%', once: true }
+    });
+
+    // Large image clip-path reveal
+    gsap.from('.features__image-large', {
+      clipPath: 'inset(100% 0% 0% 0%)', duration: 1, ease: 'power3.out',
+      scrollTrigger: { trigger: '.features__images', start: 'top 80%', once: true }
+    });
+
+    // Small image clip-path reveal (staggered)
+    gsap.from('.features__image-small', {
+      clipPath: 'inset(0% 0% 100% 0%)', duration: 1, delay: 0.15, ease: 'power3.out',
+      scrollTrigger: { trigger: '.features__images', start: 'top 80%', once: true }
+    });
+
+    // Numbers stagger
+    gsap.from('.features__number', {
+      opacity: 0, y: 16, duration: 0.65, ease: 'power2.out', stagger: 0.08,
+      scrollTrigger: { trigger: '.features__grid', start: 'top 85%', once: true }
+    });
+
+    // Descriptions stagger
+    gsap.from('.features__description', {
+      opacity: 0, y: 16, duration: 0.65, ease: 'power2.out', stagger: 0.08,
+      scrollTrigger: { trigger: '.features__grid', start: 'top 85%', once: true }
+    });
+
+    // Image cycling (auto-rotate every 2s when visible)
+    var largeItems = document.querySelectorAll('.features__image-large-item');
+    var currentImg = 0;
+    var cycleTimer = null;
+
+    function cycleImages() {
+      largeItems[currentImg].classList.remove('is-active');
+      currentImg = (currentImg + 1) % largeItems.length;
+      largeItems[currentImg].classList.add('is-active');
+    }
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          cycleTimer = setInterval(cycleImages, 2000);
+        } else {
+          clearInterval(cycleTimer);
+        }
+      });
+    }, { threshold: 0.2 });
+
+    observer.observe(feat);
+  })();
+
+  document.querySelectorAll('.nav-link, .menu-link').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      const href = this.getAttribute('href');
+      if (href && href.startsWith('#')) {
+        e.preventDefault();
+        var target = document.querySelector(href);
+        if (target) {
+          window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - 90, behavior: 'smooth' });
+        }
+      }
+    });
+  });
+
+  // Liquid pill
+  var pill = document.getElementById('liquidPill');
+  var wrap = document.getElementById('liquidNavWrap');
+  if (pill && wrap) {
+    var pillVisible = false;
+    var pillL = 0;
+
+    function liquidMoveTo(el) {
+      var wRect = wrap.getBoundingClientRect();
+      var eRect = el.getBoundingClientRect();
+      var newLeft = eRect.left - wRect.left;
+      var newRight = wRect.right - eRect.right;
+
+      if (!pillVisible) {
+        pill.style.transition = 'none';
+        pill.style.left = newLeft + 'px';
+        pill.style.right = newRight + 'px';
+        pill.offsetHeight;
+        pill.style.transition = 'opacity 0.25s ease';
+        pill.style.opacity = '1';
+        pillVisible = true;
+      } else {
+        var movingRight = newLeft > pillL;
+        if (movingRight) {
+          pill.style.transition = 'right 0.22s cubic-bezier(0.4,0,0.2,1), left 0.42s cubic-bezier(0.34,1.5,0.64,1), opacity 0.25s ease';
+        } else {
+          pill.style.transition = 'left 0.22s cubic-bezier(0.4,0,0.2,1), right 0.42s cubic-bezier(0.34,1.5,0.64,1), opacity 0.25s ease';
+        }
+        pill.style.left = newLeft + 'px';
+        pill.style.right = newRight + 'px';
+      }
+      pillL = newLeft;
+    }
+
+    wrap.querySelectorAll('.liquid-nav-item').forEach(function(item) {
+      item.addEventListener('mouseenter', function() { liquidMoveTo(this); });
+    });
+
+    wrap.addEventListener('mouseleave', function() {
+      pill.style.transition = 'opacity 0.25s ease';
+      pill.style.opacity = '0';
+      pillVisible = false;
+    });
+  }
+})();
+</script>
+<script src="data.js"></script>
+<script src="booking.js"></script>
+
+</body>
+</html>

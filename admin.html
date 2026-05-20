@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MotorCity Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Space Grotesk', 'sans-serif'],
+        display: ['Bebas Neue', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      },
+      colors: {
+        ink: '#0A0A0A',
+        ash: '#1A1A1A',
+        smoke: '#2A2A2A',
+        steel: '#4A4A4A',
+        chrome: '#888888',
+        bone: '#E8E6E1',
+        flame: '#C9A84C',
+        flameDark: '#A08838',
+        amber: '#E0C068',
+      }
+    }
+  }
+}
+</script>
+<style>
+body { font-family: 'Space Grotesk', sans-serif; background: #0A0A0A; color: #E8E6E1; }
+.display { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.02em; }
+.mono { font-family: 'JetBrains Mono', monospace; }
+input, select, textarea {
+  background: #1A1A1A;
+  border: 1px solid #2A2A2A;
+  color: #E8E6E1;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: #C9A84C; }
+.btn-flame { background: #C9A84C; transition: all 0.2s; }
+.btn-flame:hover { background: #A08838; }
+.btn-outline {
+  border: 1px solid #2A2A2A;
+  transition: all 0.15s;
+}
+.btn-outline:hover { border-color: #C9A84C; color: #C9A84C; }
+.booking-card {
+  border-left: 3px solid;
+  transition: all 0.15s;
+}
+.booking-card:hover {
+  background: #222222;
+}
+.tab-btn {
+  position: relative;
+  transition: all 0.15s;
+}
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #C9A84C;
+}
+.toast {
+  animation: slideIn 0.3s ease-out;
+}
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.day-cell {
+  transition: all 0.15s;
+  cursor: pointer;
+}
+.day-cell:hover { background: #222222; }
+.day-cell.today {
+  border-color: #C9A84C;
+}
+.capacity-bar {
+  transition: width 0.3s ease;
+}
+.event-bar {
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.event-bar:hover { transform: scale(1.02); }
+</style>
+</head>
+<body class="min-h-screen">
+
+<nav class="bg-ash border-b border-smoke px-6 py-4 sticky top-0 z-40">
+  <div class="max-w-screen-2xl mx-auto flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <a href="index.html" class="flex items-center gap-2">
+        <div class="w-9 h-9 bg-flame rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path><circle cx="12" cy="12" r="10" stroke-width="2"></circle></svg>
+        </div>
+        <div>
+          <div class="display text-xl leading-none">MOTORCITY</div>
+          <div class="text-[10px] text-flame mono">ADMIN PANEL</div>
+        </div>
+      </a>
+      <div class="hidden md:flex items-center gap-1 ml-6">
+        <button onclick="switchTab('calendar')" id="tab-calendar" class="tab-btn active px-4 py-2 text-sm">Kalendorius</button>
+        <button onclick="switchTab('list')" id="tab-list" class="tab-btn px-4 py-2 text-sm">Sąrašas</button>
+        <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn px-4 py-2 text-sm">Nustatymai</button>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <button onclick="openNewBooking()" class="btn-flame text-ink font-semibold px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
+        Naujas įrašas
+      </button>
+      <a href="index.html" class="btn-outline px-3 py-2 rounded-lg text-xs mono">← klientų pus.</a>
+    </div>
+  </div>
+</nav>
+
+<div id="view-calendar" class="max-w-screen-2xl mx-auto px-6 py-6">
+
+  <div class="grid md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-ash border border-smoke rounded-2xl p-5">
+      <div class="text-xs text-chrome mono mb-2">ŠIANDIEN</div>
+      <div class="display text-4xl text-flame" id="stat-today">0</div>
+      <div class="text-xs text-chrome mt-1">rezervacijų</div>
+    </div>
+    <div class="bg-ash border border-smoke rounded-2xl p-5">
+      <div class="text-xs text-chrome mono mb-2">ŠI SAVAITĖ</div>
+      <div class="display text-4xl" id="stat-week">0</div>
+      <div class="text-xs text-chrome mt-1">iš viso</div>
+    </div>
+    <div class="bg-ash border border-smoke rounded-2xl p-5">
+      <div class="text-xs text-chrome mono mb-2">ŠIANDIENOS APKROVA</div>
+      <div class="flex items-baseline gap-2">
+        <div class="display text-4xl" id="stat-load">0%</div>
+        <div class="text-xs text-chrome" id="stat-load-min">0 / 0 min</div>
+      </div>
+    </div>
+    <div class="bg-ash border border-smoke rounded-2xl p-5">
+      <div class="text-xs text-chrome mono mb-2">ŠALTINIAI ŠIANDIEN</div>
+      <div class="flex gap-3 mt-2">
+        <div>
+          <div class="display text-2xl text-blue-400" id="stat-online">0</div>
+          <div class="text-[10px] text-chrome mono">ONLINE</div>
+        </div>
+        <div>
+          <div class="display text-2xl text-emerald-400" id="stat-phone">0</div>
+          <div class="text-[10px] text-chrome mono">TELEFONU</div>
+        </div>
+        <div>
+          <div class="display text-2xl text-amber" id="stat-walk">0</div>
+          <div class="text-[10px] text-chrome mono">ATVYKO</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center gap-3">
+      <button onclick="changeWeek(-1)" class="btn-outline p-2 rounded-lg">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+      </button>
+      <button onclick="goToday()" class="btn-outline px-4 py-2 rounded-lg text-sm">Šiandien</button>
+      <button onclick="changeWeek(1)" class="btn-outline p-2 rounded-lg">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+      </button>
+      <div id="week-label" class="display text-2xl ml-2"></div>
+    </div>
+    <div class="flex items-center gap-4 text-xs">
+      <div class="flex items-center gap-2"><div class="w-3 h-3 rounded" style="background:#85B7EB"></div><span class="text-chrome">Online</span></div>
+      <div class="flex items-center gap-2"><div class="w-3 h-3 rounded" style="background:#5DCAA5"></div><span class="text-chrome">Telefonu</span></div>
+      <div class="flex items-center gap-2"><div class="w-3 h-3 rounded" style="background:#FAC775"></div><span class="text-chrome">Atvyko</span></div>
+    </div>
+  </div>
+
+  <div class="bg-ash border border-smoke rounded-2xl overflow-hidden">
+    <div id="week-grid" class="grid grid-cols-7"></div>
+  </div>
+
+</div>
+
+<div id="view-list" class="max-w-screen-2xl mx-auto px-6 py-6 hidden">
+  <div class="flex items-center justify-between mb-6">
+    <h2 class="display text-3xl">VISOS REZERVACIJOS</h2>
+    <div class="flex gap-2">
+      <input type="text" id="search" placeholder="Ieškoti vardas, telefonas..." class="px-4 py-2 rounded-lg text-sm w-64" oninput="renderList()">
+      <select id="filter-status" class="px-4 py-2 rounded-lg text-sm" onchange="renderList()">
+        <option value="all">Visi statusai</option>
+        <option value="confirmed">Patvirtinta</option>
+        <option value="cancelled">Atšaukta</option>
+      </select>
+    </div>
+  </div>
+  <div id="bookings-list" class="space-y-2"></div>
+</div>
+
+<div id="view-settings" class="max-w-3xl mx-auto px-6 py-6 hidden">
+  <h2 class="display text-3xl mb-6">KAPACITETO NUSTATYMAI</h2>
+
+  <div class="space-y-4">
+    <div class="bg-ash border border-smoke rounded-2xl p-6">
+      <div class="text-flame mono text-xs mb-4">// DARBO LAIKAS</div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="text-xs text-chrome mono block mb-2">DARBO DIENOS TRUKMĖ (MIN)</label>
+          <input type="number" id="set-workday" class="w-full px-3 py-2 rounded-lg text-sm">
+          <div class="text-[10px] text-chrome mt-1">Standartiškai 480 min = 8 val.</div>
+        </div>
+        <div>
+          <label class="text-xs text-chrome mono block mb-2">MECHANIKŲ SKAIČIUS</label>
+          <input type="number" id="set-mechanics" min="1" max="10" class="w-full px-3 py-2 rounded-lg text-sm">
+          <div class="text-[10px] text-chrome mt-1">Lygiagretus darbas — kapacitetas dauginamas</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-ash border border-smoke rounded-2xl p-6">
+      <div class="text-flame mono text-xs mb-4">// PASLAUGŲ KONTROLĖ</div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="text-xs text-chrome mono block mb-2">BUFERIS TARP PASLAUGŲ (MIN)</label>
+          <input type="number" id="set-buffer" min="0" max="60" class="w-full px-3 py-2 rounded-lg text-sm">
+          <div class="text-[10px] text-chrome mt-1">Mašinos priėmimas, valymas, pertrauka</div>
+        </div>
+        <div>
+          <label class="text-xs text-chrome mono block mb-2">DIDELI REMONTAI / DIENĄ</label>
+          <input type="number" id="set-big-max" min="0" max="10" class="w-full px-3 py-2 rounded-lg text-sm">
+          <div class="text-[10px] text-chrome mt-1">Darbai &gt; 2 val. (variklis, kapitalinis)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-ash border border-smoke rounded-2xl p-6">
+      <div class="text-flame mono text-xs mb-4">// PASLAUGŲ KATALOGAS IR TRUKMĖS</div>
+      <div id="services-config" class="space-y-2"></div>
+    </div>
+
+    <div class="flex gap-3">
+      <button onclick="saveSettings()" class="btn-flame text-ink font-semibold px-6 py-3 rounded-lg flex-1">Išsaugoti nustatymus</button>
+      <button onclick="resetData()" class="btn-outline text-red-400 hover:text-red-300 px-6 py-3 rounded-lg">Išvalyti visus duomenis</button>
+    </div>
+  </div>
+</div>
+
+<div id="newBookingModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/80 backdrop-blur p-4">
+  <div class="bg-ash border border-smoke rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
+    <div class="sticky top-0 bg-ash border-b border-smoke px-6 py-4 flex items-center justify-between z-10">
+      <div>
+        <div class="text-xs text-chrome mono">// ADMIN</div>
+        <div class="display text-2xl mt-1">NAUJAS ĮRAŠAS</div>
+      </div>
+      <button onclick="closeNewBooking()" class="w-10 h-10 rounded-lg border border-smoke hover:border-flame hover:text-flame flex items-center justify-center">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+
+    <div class="p-6 space-y-4">
+      <div>
+        <label class="text-xs text-chrome mono block mb-2">KAIP REGISTRUOJAMA?</label>
+        <div class="flex gap-2">
+          <button onclick="setSource('online')" id="src-online" class="src-btn flex-1 px-3 py-2.5 rounded-lg text-sm border border-smoke">📱 Online</button>
+          <button onclick="setSource('phone')" id="src-phone" class="src-btn flex-1 px-3 py-2.5 rounded-lg text-sm border border-flame bg-flame/10 text-flame">📞 Telefonu</button>
+          <button onclick="setSource('walk-in')" id="src-walkin" class="src-btn flex-1 px-3 py-2.5 rounded-lg text-sm border border-smoke">🚶 Atvyko</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-chrome mono block mb-2">VARDAS *</label>
+          <input type="text" id="nb-name" class="w-full px-3 py-2.5 rounded-lg text-sm">
+        </div>
+        <div>
+          <label class="text-xs text-chrome mono block mb-2">TELEFONAS *</label>
+          <input type="tel" id="nb-phone" class="w-full px-3 py-2.5 rounded-lg text-sm">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-chrome mono block mb-2">MARKĖ / MODELIS</label>
+          <input type="text" id="nb-car" placeholder="VW Golf 2018" class="w-full px-3 py-2.5 rounded-lg text-sm">
+        </div>
+        <div>
+          <label class="text-xs text-chrome mono block mb-2">METAI</label>
+          <input type="text" id="nb-year" class="w-full px-3 py-2.5 rounded-lg text-sm">
+        </div>
+      </div>
+
+      <div>
+        <label class="text-xs text-chrome mono block mb-2">PASLAUGA *</label>
+        <select id="nb-service" class="w-full px-3 py-2.5 rounded-lg text-sm" onchange="checkCapacityNB()"></select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-chrome mono block mb-2">DATA *</label>
+          <input type="date" id="nb-date" class="w-full px-3 py-2.5 rounded-lg text-sm" onchange="checkCapacityNB()">
+        </div>
+        <div>
+          <label class="text-xs text-chrome mono block mb-2">LAIKAS *</label>
+          <input type="time" id="nb-time" class="w-full px-3 py-2.5 rounded-lg text-sm">
+        </div>
+      </div>
+
+      <div id="capacity-warn" class="hidden"></div>
+
+      <div>
+        <label class="text-xs text-chrome mono block mb-2">PASTABOS</label>
+        <textarea id="nb-notes" rows="2" class="w-full px-3 py-2.5 rounded-lg text-sm resize-none"></textarea>
+      </div>
+    </div>
+
+    <div class="sticky bottom-0 bg-ash border-t border-smoke px-6 py-4 flex items-center justify-end gap-2">
+      <button onclick="closeNewBooking()" class="btn-outline px-4 py-2 rounded-lg text-sm">Atšaukti</button>
+      <button onclick="saveNewBooking()" class="btn-flame text-ink font-semibold px-6 py-2 rounded-lg text-sm flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+        Įrašyti
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="detailModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/80 backdrop-blur p-4">
+  <div class="bg-ash border border-smoke rounded-2xl w-full max-w-md">
+    <div class="p-6" id="detail-content"></div>
+  </div>
+</div>
+
+<div id="toast-container" class="fixed bottom-6 right-6 z-[200] space-y-2"></div>
+
+<script src="data.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
