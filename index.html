@@ -661,19 +661,19 @@ tailwind.config = {
   /* ── Fan stack cards ── */
   .fan-stack {
     position: relative;
-    width: 600px;
-    height: 400px;
+    width: 700px;
+    height: 480px;
   }
   .fan-card {
     position: absolute;
-    width: 280px;
-    height: 360px;
+    width: 220px;
+    height: 340px;
     left: 50%;
-    bottom: 0;
-    margin-left: -100px;
-    transform-origin: 50% 110%;
+    bottom: 20px;
+    margin-left: -110px;
+    transform-origin: 50% 130%;
     will-change: transform;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.18);
     cursor: pointer;
     transition: filter 0.3s, box-shadow 0.3s;
     display: flex;
@@ -685,8 +685,8 @@ tailwind.config = {
     filter: brightness(1.05);
   }
   @media (max-width: 768px) {
-    .fan-stack { width: 320px; height: 260px; }
-    .fan-card { width: 160px; height: 210px; margin-left: -80px; }
+    .fan-stack { width: 360px; height: 300px; }
+    .fan-card { width: 140px; height: 210px; margin-left: -70px; }
   }
 
   .toast {
