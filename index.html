@@ -658,35 +658,67 @@ tailwind.config = {
     line-height: 1.6;
   }
 
-  /* ── Fan stack cards ── */
-  .fan-stack {
+  /* ── Before / After reveal ── */
+  .ba-container {
     position: relative;
     width: 700px;
     height: 480px;
+    overflow: hidden;
+    border-radius: 12px;
+    cursor: ew-resize;
   }
-  .fan-card {
+  .ba-img {
     position: absolute;
-    width: 220px;
-    height: 340px;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .ba-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    clip-path: inset(0 50% 0 0);
+    transition: clip-path 0.6s ease;
+  }
+  .ba-overlay.dragging {
+    transition: none;
+  }
+  .ba-divider {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #C9A84C;
     left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 5;
+    box-shadow: 0 0 10px rgba(201,168,76,0.6);
+    transition: left 0.6s ease;
+  }
+  .ba-divider.dragging {
+    transition: none;
+  }
+  .ba-label {
+    position: absolute;
     bottom: 20px;
-    margin-left: -110px;
-    transform-origin: 50% 130%;
-    will-change: transform;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.18);
-    cursor: pointer;
-    transition: filter 0.3s, box-shadow 0.3s;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    pointer-events: none;
+    z-index: 6;
+    padding: 4px 8px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 4px;
+    color: #E8E6E1;
   }
-  .fan-card:hover {
-    box-shadow: 0 12px 40px rgba(201,168,76,0.3), 0 8px 30px rgba(0,0,0,0.15);
-    filter: brightness(1.05);
-  }
+  .ba-label-left { left: 16px; }
+  .ba-label-right { right: 16px; color: #C9A84C; }
   @media (max-width: 768px) {
-    .fan-stack { width: 360px; height: 300px; }
-    .fan-card { width: 140px; height: 210px; margin-left: -70px; }
+    .ba-container { width: 100%; max-width: 360px; height: 300px; }
   }
 
   .toast {
@@ -1191,27 +1223,12 @@ tailwind.config = {
       </p>
     </div>
     <div class="md:col-span-7 flex items-center justify-center">
-      <div id="fanStack" class="fan-stack">
-        <div class="fan-card border border-smoke bg-ash rounded-2xl p-6">
-          <div class="display text-5xl text-flame mb-2">6</div>
-          <div class="text-sm text-bone">sertifikuoti mechanikai</div>
-          <div class="text-xs text-chrome mono mt-2">// ATA · IMI · TÜV</div>
-        </div>
-        <div class="fan-card border border-smoke bg-ash rounded-2xl p-6">
-          <div class="display text-5xl text-flame mb-2">4</div>
-          <div class="text-sm text-bone">darbo postai</div>
-          <div class="text-xs text-chrome mono mt-2">// 2 lygiagretūs srautai</div>
-        </div>
-        <div class="fan-card border border-smoke bg-ash rounded-2xl p-6">
-          <div class="display text-5xl text-flame mb-2">12</div>
-          <div class="text-sm text-bone">mėn. garantija</div>
-          <div class="text-xs text-chrome mono mt-2">// visiems darbams</div>
-        </div>
-        <div class="fan-card border border-smoke bg-ash rounded-2xl p-6">
-          <div class="display text-5xl text-flame mb-2">48h</div>
-          <div class="text-sm text-bone">dalių pristatymas</div>
-          <div class="text-xs text-chrome mono mt-2">// originalios · OEM</div>
-        </div>
+      <div class="ba-container">
+        <img class="ba-img" src="po.png" alt="PO">
+        <img class="ba-overlay" id="baOverlay" src="pries.png" alt="PRIEŠ">
+        <div class="ba-divider" id="baDivider"></div>
+        <span class="ba-label ba-label-left">// PRIEŠ</span>
+        <span class="ba-label ba-label-right">// PO</span>
       </div>
     </div>
   </div>
@@ -1648,60 +1665,32 @@ function toggleMobileMenu() {
     });
   })();
 
-  // Fan stack expand animation
+  // ── Before / After reveal (mouse hover) ──
   (function() {
-    var cards = gsap.utils.toArray('#fanStack .fan-card');
-    var total = cards.length;
+    var container = document.querySelector('.ba-container');
+    var overlay = document.getElementById('baOverlay');
+    var divider = document.getElementById('baDivider');
+    if (!container || !overlay || !divider) return;
 
-    // Initial stacked state
-    cards.forEach(function(card, i) {
-      gsap.set(card, {
-        rotation: (i - 1.5) * 1.5,
-        y: (total - 1 - i) * -3,
-        zIndex: i,
-        scale: 1
-      });
+    function setPosition(pct) {
+      var rightInset = (100 - pct).toFixed(2);
+      overlay.style.clipPath = 'inset(0 ' + rightInset + '% 0 0)';
+      divider.style.left = pct + '%';
+    }
+
+    container.addEventListener('mousemove', function(e) {
+      overlay.classList.add('dragging');
+      divider.classList.add('dragging');
+      var rect = container.getBoundingClientRect();
+      var pct = Math.max(0, Math.min(100, (e.clientX - rect.left) / rect.width * 100));
+      setPosition(pct);
     });
 
-    var fanAngles = [-32, -12, 12, 32];
-    var fanY =      [ -10,  -20, -20, -10];
-
-    gsap.to(cards, {
-      rotation: function(i) { return fanAngles[i]; },
-      y: function(i) { return fanY[i]; },
-      scale: 1,
-      stagger: 0.05,
-      scrollTrigger: {
-        trigger: '#fanStack',
-        start: 'top 85%',
-        end: 'top 50%',
-        scrub: true
-      }
+    container.addEventListener('mouseleave', function() {
+      overlay.classList.remove('dragging');
+      divider.classList.remove('dragging');
+      setPosition(50);
     });
-
-    // Hover: card pops up and comes to front
-    cards.forEach(function(card, i) {
-      card.addEventListener('mouseenter', function() {
-        gsap.to(card, {
-          y: fanY[i] - 40,
-          scale: 1.08,
-          zIndex: 10,
-          duration: 0.35,
-          ease: 'back.out(2)',
-          overwrite: 'auto'
-        });
-      });
-    card.addEventListener('mouseleave', function() {
-      gsap.to(card, {
-        y: fanY[i],
-        scale: 1,
-        zIndex: i,
-        duration: 0.35,
-        ease: 'power2.out',
-        overwrite: 'auto'
-      });
-    });
-  });
   })();
 
   // ── Features section animations ──
